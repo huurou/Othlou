@@ -63,6 +63,16 @@ class Play:
         if self.count_turn_over(board, color, y, x,  1,-1): return 1
         if self.count_turn_over(board, color, y, x,  1, 1): return 1
         return 0
+    
+    def legal_list(self,board,color):
+        legal = np.empty((0,2), int)
+        for i in range(1, 9):
+          for j in range(1, 9):
+            if self.is_legal(board, color, i, j):
+                legal = np.append(legal, np.array([[i,j]]), axis = 0)
+
+        return legal
+              
     def exist_legal_move(self, board, color):
         for i in range(1,9):
             for j in range(1,9):
@@ -79,6 +89,15 @@ class Play:
                 for i in range(1, count+1):
                     board[y + i * d][x + i * e] = color
         board[y][x] = color
+
+class Cpu:
+    def cpu_randmove(self, board, color):
+        l = Play().legal_list(board, color)
+        if l.shape[0] == 1:
+          y, x = l[0]
+        else:
+          y, x = l[int(np.random.randint(l.shape[0] - 1,size = 1))]
+        return y, x
 
 class Othello:
     def game(self):
@@ -108,6 +127,32 @@ class Othello:
           print('勝者:Player 2')
         elif c_1 == c_2:
           print('引き分け')
+    def cvc_game(self):
+      ban = Ban().init_ban()
+      color = 1
+      while True:
+        Ban().draw_ban(ban)
+        if not Play().exist_legal_move(ban, color):
+            print('打つ手が無いのでパスします')
+            color = (3 - color)
+            if not Play().exist_legal_move(ban, color):
+                print('打つ手が無いのでパスします')
+                break
+        y, x = Cpu().cpu_randmove(ban, color)
+        Play().set_turn(ban, color, y, x)
+        color = int(3 - color)
+      c_1 = np.sum(ban == 1)
+      c_2 = np.sum(ban == 2)
+      print('ゲーム終了')
+      print('Player 1 %d' % c_1)
+      print('Player 2 %d' % c_2)
+      if c_1 > c_2:
+          print('勝者:Player 1')
+      elif c_1 < c_2:
+          print('勝者:Player 2')
+      elif c_1 == c_2:
+          print('引き分け')
+        
     def get_move(self, board, color):
         d = {'a':1, 'b':2, 'c':3, 'd':4, 'e':5, 'f':6, 'g':7, 'h':8}
         p = {1 : '●', 2 : '○'}
@@ -122,7 +167,9 @@ class Othello:
             x = d[X]
             if (Play().is_legal(board, color, y, x)):
                 return y,x
-            else: print('illegal hand!', end = '')
+            else:
+                print('illegal hand!', end ='')
 
 if __name__ == '__main__':
-  Othello().game()
+  #Othello().game()
+  Othello().cvc_game()
