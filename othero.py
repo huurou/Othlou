@@ -8,6 +8,7 @@ Original file is located at
 """
 
 import numpy as np
+import copy
 
 class Ban:
     def init_ban(self):
@@ -99,6 +100,54 @@ class Cpu:
           y, x = l[int(np.random.randint(l.shape[0] - 1,size = 1))]
         return y, x
 
+    def playout(self, board, color):
+      player = color
+      while True:
+        if not Play().exist_legal_move(board, color):
+          color = (3 - color)
+          if not Play().exist_legal_move(board, color):
+            c_1 = np.sum(board == 1)
+            c_2 = np.sum(board == 2)
+            if c_1 >= c_2:
+              color = player
+              return np.array([[1,0]])
+            else :
+              color = player
+              return np.array([[0,1]])
+        y, x = self.cpu_randmove(board, color)
+        Play().set_turn(board, color, y, x)
+        color = (3 - color)
+
+    def playout_result(self, board, color, y, x, num):
+      tsugi_board = copy.deepcopy(board)
+      player = color
+      result = np.empty((0, 2), int)
+      Play().set_turn(tsugi_board, color, y, x)
+      color = (3 - color)
+      for i in range(num):
+        tsugitsugi_board = copy.deepcopy(tsugi_board)
+        result = np.append(result, self.playout(tsugitsugi_board,color), axis = 0)
+      if player == 1:
+        return np.sum(result[:,0] == 1) / float(num)
+      elif player == 2:
+        return np.sum(result[:,1] == 1) / float(num)
+
+    def decide_move(self, board, color, num):
+      rate = []
+      l = Play().legal_list(board, color)
+      print(l)
+      if l.shape[0] == 1:
+        y, x = l[0]
+      for i in range(l.shape[0]):
+        print('{0}手目試行中'.format(i+1))
+        q, p = l[i]
+        tsugi_board = copy.deepcopy(board)
+        rate.append(self.playout_result(tsugi_board, color, q, p, num))
+      print(rate)
+      y, x = l[rate.index(max(rate))]
+      return y, x
+
+
 class Othello:
     def game(self):
         ban = Ban().init_ban()
@@ -114,8 +163,7 @@ class Othello:
                     break
             y, x = self.get_move(ban, color)
             Play().set_turn(ban, color, y, x)
-            
-            color = int(3 - color)
+            color = (3 - color)
         c_1 = np.sum(ban == 1)
         c_2 = np.sum(ban == 2)
         print('ゲーム終了')
@@ -152,7 +200,39 @@ class Othello:
           print('勝者:Player 2')
       elif c_1 == c_2:
           print('引き分け')
-        
+
+    def cvc_mc_game(self, num):  # num=playout try number
+      ban = Ban().init_ban()
+      color = 1
+      for count in range(2):  # 1,2手目はランダム
+        Ban().draw_ban(ban)
+        y, x = Cpu().cpu_randmove(ban, color)
+        Play().set_turn(ban, color, y, x)
+        color = 3 - color
+      while True:
+        Ban().draw_ban(ban)
+        if not Play().exist_legal_move(ban, color):
+          print('打つ手が無いのでパスします')
+          color = (3 - color)
+          if not Play().exist_legal_move(ban, color):
+            print('打つ手が無いのでパスします')
+            break
+        tsugi_ban = copy.deepcopy(ban)
+        y, x = Cpu().decide_move(tsugi_ban, color, num)
+        Play().set_turn(ban, color, y, x)
+        color = int(3 - color)
+      c_1 = np.sum(ban == 1)
+      c_2 = np.sum(ban == 2)
+      print('ゲーム終了')
+      print('Player 1 %d' % c_1)
+      print('Player 2 %d' % c_2)
+      if c_1 > c_2:
+        print('勝者:Player 1')
+      elif c_1 < c_2:
+        print('勝者:Player 2')
+      elif c_1 == c_2:
+        print('引き分け')
+
     def get_move(self, board, color):
         d = {'a':1, 'b':2, 'c':3, 'd':4, 'e':5, 'f':6, 'g':7, 'h':8}
         p = {1 : '●', 2 : '○'}
@@ -172,4 +252,5 @@ class Othello:
 
 if __name__ == '__main__':
   #Othello().game()
-  Othello().cvc_game()
+  #Othello().cvc_game()
+  Othello().cvc_mc_game(500)
