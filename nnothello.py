@@ -78,7 +78,6 @@ class Kifu:
       ban = copy.deepcopy(FIRSTBAN)
       color = 1
       kifu = np.load(kifufile)
-      banlist = np.empty((2, 0, 0), int)
       black = np.empty((0, 64), int)
       white = np.empty((0, 64), int)
       label = kifu[-1]
@@ -98,5 +97,11 @@ class Kifu:
         y, x = kifu[i]
         Play().set_turn(ban, color, y, x)
         color = 3 - color
+      banlist = np.c_[black, white]
       return banlist, label
 
+if __name__ == '__main__':
+  list, label = Kifu().readkifu('./kifu/18_04_29_21_28_30-616.npy')
+  print(list)
+  print(label)
+  print(list.shape)
