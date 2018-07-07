@@ -1,9 +1,9 @@
 import numpy as np
 import copy
-import math
+import concurrent.futures
 
 PLAYOUT_NUM = 10  # プレイアウト試行回数
-DEPTH = 3  # 探索深さ
+DEPTH = 1  # 探索深さ
 
 
 class Ban:
@@ -131,7 +131,7 @@ class Playout:
     result = np.empty((0, 2), int)
     for _ in range(num):
       result = np.append(result, self.playout(board, color), axis=0)
-    return np.sum(result[:, 0] == 1) - (num / 2)  # 先手勝数-num/2
+    return (np.sum(result[:, 0] == 1) - (num / 2)) * 20000 / num  # -10000～+10000
 
 
 class Node:  # 探索木のノード
@@ -157,6 +157,8 @@ class Makenode:
 
 class Cpu:
     def abpruning(self, node, depth, alpha, beta):
+        print(depth)
+        print(alpha, beta)
         if not Play().exist_legal_move(node.board, node.color) or depth == 0:
             return Playout().playout_result(node)
         Makenode().make_child(node)
@@ -164,13 +166,19 @@ class Cpu:
             for child in node.child_node:
                 alpha = max(alpha, self.abpruning(child, depth-1, alpha, beta))
                 if alpha >= beta:
+                    print(f'α={alpha},β={beta},βカット！')
                     break  # βカット
+            print(depth - 1)
+            print(f'return→{alpha}, {beta}')
             return alpha
         elif node.color == 2:
             for child in node.child_node:
                 beta = min(beta, self.abpruning(child, depth - 1, alpha, beta))
                 if alpha >= beta:
+                    print(f'α={alpha},β={beta},αカット！')
                     break  # αカット
+            print(depth - 1)
+            print(f'{alpha}, return→{beta}')
             return beta
 
     def decide_move(self, board, color):  # 現局面の合法手のうちもっとも評価値の高いものを選ぶ
@@ -179,7 +187,7 @@ class Cpu:
         list = []
         for child in node.child_node:
             list.append(self.abpruning(child, DEPTH, float('-inf'), float('inf')))
-        print(list)
+            print(list)
         if color == 1:
             y, x = node.child_move[list.index(max(list))]
             return y, x
@@ -191,7 +199,7 @@ class Othello:
     ban = Ban().init_ban()
     color = 1
     p = {1: '●', 2: '○'}
-    for count in range(2):  # 1,2手目はランダム
+    for count in range(1):  # 1,2手目はランダム
       Ban().draw_ban(ban)
       y, x = Playout().randmove(ban, color)
       Play().set_turn(ban, color, y, x)
@@ -225,4 +233,5 @@ class Othello:
 
 
 if __name__ == '__main__':
-    Othello().cvc_ab_game()
+    pool = concurrent.futures.ProcessPoolExecutor(max_workers=8)
+    pool.submit(Othello().cvc_ab_game())

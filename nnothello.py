@@ -1,5 +1,8 @@
 import numpy as np
 import copy
+import glob
+from keras.models import Sequential
+from keras.layers import Dense, Activation
 
 FIRSTBAN = np.array([[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
                      [-1, 0, 0, 0, 0, 0, 0, 0, 0,-1],
@@ -55,7 +58,7 @@ class Play:
 
     return legal
 
-  def exist_legal_move(self, board, color):  # 合法手の有る無しを1 or 0で返す
+  def exist_legal_move(self, board, color):  # 合法手の有無を1 or 0で返す
     for i in range(1, 9):
       for j in range(1, 9):
         if self.is_legal(board, color, i, j):
@@ -65,7 +68,7 @@ class Play:
   def set_turn(self, board, color, y, x):  # 渡された盤面に石を打ち石をひっくり返す
     for d in range(-1, 2):
       for e in range(-1, 2):
-        if d == 0 and e == 0:
+        if d == e == 0:
           continue
         count = self.count_turn_over(board, color, y, x, d, e)
         for i in range(1, count + 1):
@@ -80,7 +83,7 @@ class Kifu:
       kifu = np.load(kifufile)
       black = np.empty((0, 64), int)
       white = np.empty((0, 64), int)
-      label = kifu[-1]
+      label_1 = kifu[-1]
       for i in range(kifu.shape[0]):
         reban = ban[1:9, 1:9]
         b = np.zeros((8, 8))
@@ -98,10 +101,19 @@ class Kifu:
         Play().set_turn(ban, color, y, x)
         color = 3 - color
       banlist = np.c_[black, white]
-      return banlist, label
+      label_2 = label_1[np.newaxis, :]
+      labelist = np.empty((0, 2))
+      for _ in range(banlist.shape[0]):
+        labelist = np.append(labelist, label_2, axis=0)
+      return banlist, labelist
+
 
 if __name__ == '__main__':
-  list, label = Kifu().readkifu('./kifu/18_04_29_21_28_30-616.npy')
-  print(list)
-  print(label)
-  print(list.shape)
+    banlist, labelist = Kifu().readkifu()
+    model = Sequential()
+    model.add(Dense(200, input_dim=128, activation='relu'))
+    model.add(Dense(200,activation='relu'))
+    model.add(Dense(2, activation='sigmoid'))
+    model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
+    model.fit(banlist, labelist, epochs=10, batch_size=32)
+

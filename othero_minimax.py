@@ -224,7 +224,7 @@ class Mmcpu:
     Entry_node(node).make_child()
     for i in range(node.child_num):
       node.child_eval.append(self.mini_max(node.child_node[i], DEPTH))
-    print(np.reshape(node.child_move, (1, -1)))
+    print(node.child_move)
     print(node.child_eval)
     if color == 1:
       y, x = node.child_move[node.child_eval.index(max(node.child_eval))]

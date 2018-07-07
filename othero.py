@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """othero.ipynb
 
@@ -10,247 +11,356 @@ Original file is located at
 import numpy as np
 import copy
 
-class Ban:
-    def init_ban(self):
-        first_board = np.array([[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
-                              ,[-1, 0, 0, 0, 0, 0, 0, 0, 0,-1]
-                              ,[-1, 0, 0, 0, 0, 0, 0, 0, 0,-1]
-                              ,[-1, 0, 0, 0, 0, 0, 0, 0, 0,-1]
-                              ,[-1, 0, 0, 0, 0, 0, 0, 0, 0,-1]
-                              ,[-1, 0, 0, 0, 0, 0, 0, 0, 0,-1]
-                              ,[-1, 0, 0, 0, 0, 0, 0, 0, 0,-1]
-                              ,[-1, 0, 0, 0, 0, 0, 0, 0, 0,-1]
-                              ,[-1, 0, 0, 0, 0, 0, 0, 0, 0,-1]
-                              ,[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]])
-        first_board[4][4] = first_board[5][5] = 2
-        first_board[4][5] = first_board[5][4] = 1
-        return first_board
+PLAYOUT_NUM = 100  # プレアイアウト試行回数
 
-    def stone(self,ishi):
-        if ishi == 0:
-            return '・'
-        elif ishi == 1:
-            return '●'
-        else:
-            return'○'
-    def draw_ban(self,board):
-        print('  a  b  c  d  e  f  g  h ')
-        print('  ------------------------')
-        for i in range(1,9):
-            print('%d|'%i, end='')
-            for j in range(1,9):
-                print(self.stone(board[i][j]),end=' ')
-            print('|')
-        print('  ------------------------')
+class Ban:
+  def init_ban(self):
+    first_board = np.array([[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+                             , [-1, 0, 0, 0, 0, 0, 0, 0, 0, -1]
+                             , [-1, 0, 0, 0, 0, 0, 0, 0, 0, -1]
+                             , [-1, 0, 0, 0, 0, 0, 0, 0, 0, -1]
+                             , [-1, 0, 0, 0, 2, 1, 0, 0, 0, -1]
+                             , [-1, 0, 0, 0, 1, 2, 0, 0, 0, -1]
+                             , [-1, 0, 0, 0, 0, 0, 0, 0, 0, -1]
+                             , [-1, 0, 0, 0, 0, 0, 0, 0, 0, -1]
+                             , [-1, 0, 0, 0, 0, 0, 0, 0, 0, -1]
+                             , [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]])
+    return first_board
+
+  def stone(self, ishi):
+    if ishi == 0:
+      return '・'
+    elif ishi == 1:
+      return '●'
+    else:
+      return '○'
+
+  def draw_ban(self, board):
+    print('  a  b  c  d  e  f  g  h ')
+    print('  ------------------------')
+    for i in range(1, 9):
+      print('%d|' % i, end='')
+      for j in range(1, 9):
+        print(self.stone(board[i][j]), end=' ')
+      print('|')
+    print('  ------------------------')
+
 
 class Play:
-    def count_turn_over(self, board, color, y, x, d, e):
-        i = 1
-        while board[y + i * d][x + i * e] == (3 - color):
-            i += 1
-        if board[y + i * d][x + i * e] == color:
-            return i - 1
-        else:
-            return 0
-    def is_legal(self,board, color, y, x):
-        if x < 1 or y > 8 or x < 1 or y > 8: return 0
-        if board[y][x] != 0 :return 0
-        if self.count_turn_over(board, color, y, x, -1, 0): return 1
-        if self.count_turn_over(board, color, y, x,  1, 0): return 1
-        if self.count_turn_over(board, color, y, x,  0,-1): return 1
-        if self.count_turn_over(board, color, y, x,  0, 1): return 1
-        if self.count_turn_over(board, color, y, x, -1,-1): return 1
-        if self.count_turn_over(board, color, y, x, -1, 1): return 1
-        if self.count_turn_over(board, color, y, x,  1,-1): return 1
-        if self.count_turn_over(board, color, y, x,  1, 1): return 1
-        return 0
-    
-    def legal_list(self,board,color):
-        legal = np.empty((0,2), int)
-        for i in range(1, 9):
-          for j in range(1, 9):
-            if self.is_legal(board, color, i, j):
-                legal = np.append(legal, np.array([[i,j]]), axis = 0)
+  def count_turn_over(self, board, color, y, x, d, e):
+    i = 1
+    while board[y + i * d][x + i * e] == (3 - color):
+      i += 1
+    if board[y + i * d][x + i * e] == color:
+      return i - 1
+    else:
+      return 0
 
-        return legal
-              
-    def exist_legal_move(self, board, color):
-        for i in range(1,9):
-            for j in range(1,9):
-                if self.is_legal(board, color, i, j):return 1
-        return 0
-    
-    def set_turn(self, board, color, y, x):
-        count = 0
-        for d in range(-1,2):
-            for e in range(-1,2):
-                if (d == 0 and e == 0):
-                    continue
-                count = self.count_turn_over(board, color, y, x, d, e)
-                for i in range(1, count+1):
-                    board[y + i * d][x + i * e] = color
-        board[y][x] = color
+  def is_legal(self, board, color, y, x):
+    if x < 1 or y > 8 or x < 1 or y > 8: return 0
+    if board[y][x] != 0: return 0
+    if self.count_turn_over(board, color, y, x, -1, 0): return 1
+    if self.count_turn_over(board, color, y, x, 1, 0): return 1
+    if self.count_turn_over(board, color, y, x, 0, -1): return 1
+    if self.count_turn_over(board, color, y, x, 0, 1): return 1
+    if self.count_turn_over(board, color, y, x, -1, -1): return 1
+    if self.count_turn_over(board, color, y, x, -1, 1): return 1
+    if self.count_turn_over(board, color, y, x, 1, -1): return 1
+    if self.count_turn_over(board, color, y, x, 1, 1): return 1
+    return 0
+
+  def legal_list(self, board, color):
+    legal = np.empty((0, 2), int)
+    for i in range(1, 9):
+      for j in range(1, 9):
+        if self.is_legal(board, color, i, j):
+          legal = np.append(legal, np.array([[i, j]]), axis=0)
+
+    return legal
+
+  def exist_legal_move(self, board, color):
+    for i in range(1, 9):
+      for j in range(1, 9):
+        if self.is_legal(board, color, i, j): return 1
+    return 0
+
+  def set_turn(self, board, color, y, x):
+    count = 0
+    for d in range(-1, 2):
+      for e in range(-1, 2):
+        if d == 0 and e == 0:
+          continue
+        count = self.count_turn_over(board, color, y, x, d, e)
+        for i in range(1, count + 1):
+          board[y + i * d][x + i * e] = color
+    board[y][x] = color
+
 
 class Cpu:
-    def cpu_randmove(self, board, color):
-        l = Play().legal_list(board, color)
-        if l.shape[0] == 1:
-          y, x = l[0]
-        else:
-          y, x = l[int(np.random.randint(l.shape[0] - 1,size = 1))]
-        return y, x
+  def cpu_randmove(self, board, color):
+    l = Play().legal_list(board, color)
+    if l.shape[0] == 1:
+      y, x = l[0]
+    else:
+      y, x = l[int(np.random.randint(l.shape[0] - 1, size=1))]
+    return y, x
 
-    def playout(self, board, color):
-      player = color
-      while True:
-        if not Play().exist_legal_move(board, color):
-          color = (3 - color)
-          if not Play().exist_legal_move(board, color):
-            c_1 = np.sum(board == 1)
-            c_2 = np.sum(board == 2)
-            if c_1 >= c_2:
-              color = player
-              return np.array([[1,0]])
-            else :
-              color = player
-              return np.array([[0,1]])
-        y, x = self.cpu_randmove(board, color)
-        Play().set_turn(board, color, y, x)
+  def playout(self, board, color):
+    while True:
+      if not Play().exist_legal_move(board, color):
         color = (3 - color)
-
-    def playout_result(self, board, color, y, x, num):
-      tsugi_board = copy.deepcopy(board)
-      player = color
-      result = np.empty((0, 2), int)
-      Play().set_turn(tsugi_board, color, y, x)
+        if not Play().exist_legal_move(board, color):
+          c_1 = np.sum(board == 1)
+          c_2 = np.sum(board == 2)
+          if c_1 >= c_2:
+            return np.array([[1, 0]])
+          else:
+            return np.array([[0, 1]])
+      y, x = self.cpu_randmove(board, color)
+      Play().set_turn(board, color, y, x)
       color = (3 - color)
-      for i in range(num):
-        tsugitsugi_board = copy.deepcopy(tsugi_board)
-        result = np.append(result, self.playout(tsugitsugi_board,color), axis = 0)
-      if player == 1:
-        return np.sum(result[:,0] == 1) / float(num)
-      elif player == 2:
-        return np.sum(result[:,1] == 1) / float(num)
 
-    def decide_move(self, board, color, num):
-      rate = []
-      l = Play().legal_list(board, color)
-      print(l)
-      if l.shape[0] == 1:
-        y, x = l[0]
-      for i in range(l.shape[0]):
-        print('{0}手目試行中'.format(i+1))
-        q, p = l[i]
-        tsugi_board = copy.deepcopy(board)
-        rate.append(self.playout_result(tsugi_board, color, q, p, num))
+  def playout_result(self, board, color, y, x):
+    num = PLAYOUT_NUM
+    tsugi_board = copy.deepcopy(board)
+    player = color
+    result = np.empty((0, 2), int)
+    Play().set_turn(tsugi_board, color, y, x)
+    color = (3 - color)
+    for i in range(num):
+      tsugitsugi_board = copy.deepcopy(tsugi_board)
+      result = np.append(result, self.playout(tsugitsugi_board, color), axis=0)
+    if player == 1:
+      return np.sum(result[:, 0] == 1) / float(num)
+    elif player == 2:
+      return np.sum(result[:, 1] == 1) / float(num)
+
+  def decide_move(self, board, color):
+    rate = []
+    l = Play().legal_list(board, color)
+    print(l)
+    if l.shape[0] == 1:
+      y, x = l[0]
+    for i in range(l.shape[0]):
+      print('{0}手目試行中'.format(i + 1))
+      q, p = l[i]
+      tsugi_board = copy.deepcopy(board)
+      rate.append(self.playout_result(tsugi_board, color, q, p))
+    print(rate)
+    y, x = l[rate.index(max(rate))]
+    return y, x
+
+
+class Node:
+  def __init__(self, board, color):
+    self.board = copy.deepcopy(board)  # ノードの局面
+    self.color = color  # ノードの手番
+    self.child_num = 0  # 子ノードの数
+    self.child_move = None  # 子ノードの指し手のリスト
+    self.child_eval = []  # 子ノードの勝率
+    self.child_node = []  # 子ノード
+
+
+class Entry_node:
+  def __init__(self, node):
+    self.node = node
+
+  def make_child(self):
+    self.node.child_move = Play().legal_list(self.node.board, self.node.color)
+    self.node.child_num = self.node.child_move.shape[0]
+    for i in range(self.node.child_num):
+      tsugiban = copy.deepcopy(self.node.board)
+      y, x = self.node.child_move[i]
+      Play().set_turn(tsugiban, self.node.color, y, x)
+      aite_color = 3 - self.node.color
+      self.node.child_node.append(Node(tsugiban, aite_color))  # 子ノードに渡すのは盤面と手番の情報
+
+  def node_eval(self):
+    rate = []
+    l = Play().legal_list(self.node.board, self.node.color)
+    Ban().draw_ban(self.node.board)
+    for i in range(l.shape[0]):
+      y, x = l[i]
+      tsugi_board = copy.deepcopy(self.node.board)
+      print(self.node.color)
+      rate.append(Cpu().playout_result(tsugi_board, self.node.color, y, x))
       print(rate)
-      y, x = l[rate.index(max(rate))]
-      return y, x
+    return max(rate)
+
+
+class Abcpu():
+  def mini_max(self, node, depth):
+     return self.alpha_beta(node, depth, float('-inf'), float('inf'))
+
+  def alpha_beta(self, node, depth, alpha, beta):
+    if depth == 0:
+      return Entry_node(node).node_eval()
+    Entry_node(node).make_child()
+    for i in node.child_node:
+      print(alpha, beta)
+      alpha = max(alpha, 1 - self.alpha_beta(i, depth - 1, 1 - beta, 1 - alpha))  # 勝率を評価値としているのでこでれでいいはず!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if alpha >= beta:
+        return alpha
+    return alpha
+  def decide_move(self, board, color):
+    node = Node(board, color)
+    Entry_node(node).make_child()
+    print(node.child_move)
+    for i in range(node.child_num):
+      node.child_eval.append(self.mini_max(node.child_node[i], 1))  # 深さ
+    y, x = node.child_move[node.child_eval.index(max(node.child_eval))]
+    return y, x
+
 
 
 class Othello:
-    def game(self):
-        ban = Ban().init_ban()
-        color = 1
-        print('ゲームスタート！')
-        while True:
-            Ban().draw_ban(ban)
-            if not Play().exist_legal_move(ban, color):
-                print('打つ手が無いのでパスします')
-                color = (3-color)
-                if not Play().exist_legal_move(ban, color):
-                    print('打つ手が無いのでパスします')
-                    break
-            y, x = self.get_move(ban, color)
-            Play().set_turn(ban, color, y, x)
-            color = (3 - color)
-        c_1 = np.sum(ban == 1)
-        c_2 = np.sum(ban == 2)
-        print('ゲーム終了')
-        print('Player 1 %d' % c_1)
-        print('Player 2 %d' % c_2)
-        if c_1 > c_2:
-          print('勝者:Player 1')
-        elif c_1<c_2:
-          print('勝者:Player 2')
-        elif c_1 == c_2:
-          print('引き分け')
-    def cvc_game(self):
-      ban = Ban().init_ban()
-      color = 1
-      while True:
-        Ban().draw_ban(ban)
-        if not Play().exist_legal_move(ban, color):
-            print('打つ手が無いのでパスします')
-            color = (3 - color)
-            if not Play().exist_legal_move(ban, color):
-                print('打つ手が無いのでパスします')
-                break
-        y, x = Cpu().cpu_randmove(ban, color)
-        Play().set_turn(ban, color, y, x)
-        color = int(3 - color)
-      c_1 = np.sum(ban == 1)
-      c_2 = np.sum(ban == 2)
-      print('ゲーム終了')
-      print('Player 1 %d' % c_1)
-      print('Player 2 %d' % c_2)
-      if c_1 > c_2:
-          print('勝者:Player 1')
-      elif c_1 < c_2:
-          print('勝者:Player 2')
-      elif c_1 == c_2:
-          print('引き分け')
-
-    def cvc_mc_game(self, num):  # num=playout try number
-      ban = Ban().init_ban()
-      color = 1
-      for count in range(2):  # 1,2手目はランダム
-        Ban().draw_ban(ban)
-        y, x = Cpu().cpu_randmove(ban, color)
-        Play().set_turn(ban, color, y, x)
-        color = 3 - color
-      while True:
-        Ban().draw_ban(ban)
+  def game(self):
+    ban = Ban().init_ban()
+    color = 1
+    print('ゲームスタート！')
+    while True:
+      Ban().draw_ban(ban)
+      if not Play().exist_legal_move(ban, color):
+        print('打つ手が無いのでパスします')
+        color = (3 - color)
         if not Play().exist_legal_move(ban, color):
           print('打つ手が無いのでパスします')
-          color = (3 - color)
-          if not Play().exist_legal_move(ban, color):
-            print('打つ手が無いのでパスします')
-            break
-        tsugi_ban = copy.deepcopy(ban)
-        y, x = Cpu().decide_move(tsugi_ban, color, num)
-        Play().set_turn(ban, color, y, x)
-        color = int(3 - color)
-      c_1 = np.sum(ban == 1)
-      c_2 = np.sum(ban == 2)
-      print('ゲーム終了')
-      print('Player 1 %d' % c_1)
-      print('Player 2 %d' % c_2)
-      if c_1 > c_2:
-        print('勝者:Player 1')
-      elif c_1 < c_2:
-        print('勝者:Player 2')
-      elif c_1 == c_2:
-        print('引き分け')
+          break
+      y, x = self.get_move(ban, color)
+      Play().set_turn(ban, color, y, x)
+      color = (3 - color)
+    c_1 = np.sum(ban == 1)
+    c_2 = np.sum(ban == 2)
+    print('ゲーム終了')
+    print('Player 1 %d' % c_1)
+    print('Player 2 %d' % c_2)
+    if c_1 > c_2:
+      print('勝者:Player 1')
+    elif c_1 < c_2:
+      print('勝者:Player 2')
+    elif c_1 == c_2:
+      print('引き分け')
 
-    def get_move(self, board, color):
-        d = {'a':1, 'b':2, 'c':3, 'd':4, 'e':5, 'f':6, 'g':7, 'h':8}
-        p = {1 : '●', 2 : '○'}
-        if color == 1:
-            print('Player {0[1]}(半角数字[半角スペース]半角英字)'.format(p), end = '')
-        elif color == 2:
-            print('Player {0[2]}(半角数字[半角スペース]半角英字)'.format(p), end='')
-        while True:
-            print('>>',end = '')
-            Y,X = input().split()
-            y = int(Y)
-            x = d[X]
-            if (Play().is_legal(board, color, y, x)):
-                return y,x
-            else:
-                print('illegal hand!', end ='')
+  def cvc_game(self):
+    ban = Ban().init_ban()
+    color = 1
+    while True:
+      Ban().draw_ban(ban)
+      if not Play().exist_legal_move(ban, color):
+        print('打つ手が無いのでパスします')
+        color = (3 - color)
+        if not Play().exist_legal_move(ban, color):
+          print('打つ手が無いのでパスします')
+          break
+      y, x = Cpu().cpu_randmove(ban, color)
+      Play().set_turn(ban, color, y, x)
+      color = int(3 - color)
+    c_1 = np.sum(ban == 1)
+    c_2 = np.sum(ban == 2)
+    print('ゲーム終了')
+    print('Player 1 %d' % c_1)
+    print('Player 2 %d' % c_2)
+    if c_1 > c_2:
+      print('勝者:Player 1')
+    elif c_1 < c_2:
+      print('勝者:Player 2')
+    elif c_1 == c_2:
+      print('引き分け')
+
+  def cvc_mc_game(self):
+    ban = Ban().init_ban()
+    color = 1
+    p = {1: '●', 2: '○'}
+    for count in range(2):  # 1,2手目はランダム
+      Ban().draw_ban(ban)
+      y, x = Cpu().cpu_randmove(ban, color)
+      Play().set_turn(ban, color, y, x)
+      color = 3 - color
+    while True:
+      Ban().draw_ban(ban)
+      if not Play().exist_legal_move(ban, color):
+        print('打つ手が無いのでパスします')
+        color = (3 - color)
+        if not Play().exist_legal_move(ban, color):
+          print('打つ手が無いのでパスします')
+          break
+      if color == 1:
+        print('Player {0[1]}'.format(p))
+      elif color == 2:
+        print('Player {0[2]}'.format(p))
+      tsugi_ban = copy.deepcopy(ban)
+      y, x = Cpu().decide_move(tsugi_ban, color)
+      Play().set_turn(ban, color, y, x)
+      color = int(3 - color)
+    c_1 = np.sum(ban == 1)
+    c_2 = np.sum(ban == 2)
+    print('ゲーム終了')
+    print('Player 1 %d' % c_1)
+    print('Player 2 %d' % c_2)
+    if c_1 > c_2:
+      print('勝者:Player 1')
+    elif c_1 < c_2:
+      print('勝者:Player 2')
+    elif c_1 == c_2:
+      print('引き分け')
+
+  def cvc_ab_game(self):
+    ban = Ban().init_ban()
+    color = 1
+    p = {1: '●', 2: '○'}
+    for count in range(2):  # 1,2手目はランダム
+      Ban().draw_ban(ban)
+      y, x = Cpu().cpu_randmove(ban, color)
+      Play().set_turn(ban, color, y, x)
+      color = 3 - color
+    while True:
+      Ban().draw_ban(ban)
+      if not Play().exist_legal_move(ban, color):
+        print('打つ手が無いのでパスします')
+        color = (3 - color)
+        if not Play().exist_legal_move(ban, color):
+          print('打つ手が無いのでパスします')
+          break
+      if color == 1:
+        print('Player {0[1]}'.format(p))
+      elif color == 2:
+        print('Player {0[2]}'.format(p))
+      tsugi_ban = copy.deepcopy(ban)
+      y, x = Abcpu().decide_move(tsugi_ban, color)
+      Play().set_turn(ban, color, y, x)
+      color = int(3 - color)
+    c_1 = np.sum(ban == 1)
+    c_2 = np.sum(ban == 2)
+    print('ゲーム終了')
+    print('Player 1 %d' % c_1)
+    print('Player 2 %d' % c_2)
+    if c_1 > c_2:
+      print('勝者:Player 1')
+    elif c_1 < c_2:
+      print('勝者:Player 2')
+    elif c_1 == c_2:
+      print('引き分け')
+
+  def get_move(self, board, color):
+    d = {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
+    p = {1: '●', 2: '○'}
+    if color == 1:
+      print('Player {0[1]}(半角数字[半角スペース]半角英字)'.format(p), end='')
+    elif color == 2:
+      print('Player {0[2]}(半角数字[半角スペース]半角英字)'.format(p), end='')
+    while True:
+      print('>>', end='')
+      Y, X = input().split()
+      y = int(Y)
+      x = d[X]
+      if (Play().is_legal(board, color, y, x)):
+        return y, x
+      else:
+        print('illegal hand!', end='')
+
 
 if __name__ == '__main__':
-  #Othello().game()
-  #Othello().cvc_game()
-  Othello().cvc_mc_game(500)
+  # Othello().game()
+  # Othello().cvc_game()
+  # Othello().cvc_mc_game()
+  Othello().cvc_ab_game()

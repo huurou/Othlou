@@ -1,0 +1,17 @@
+{
+    "git.ignoreLimitWarning": true,
+    "python.linting.enabled": false,
+    "python.unitTest.unittestArgs": [
+        "-v",
+        "-s",
+        "./kifu",
+        "-p",
+        "test*.py"
+    ],
+    "python.unitTest.pyTestEnabled": false,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.unittestEnabled": false,
+    "python.pythonPath": "C:\\Users\\taihei-k\\Anaconda3\\python.exe",
+    "python.unitTest.promptToConfigure": false,
+    "python.autoComplete.addBrackets": true
+}
