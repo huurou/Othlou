@@ -1,8 +1,11 @@
-import numpy as np
 import copy
+import random
 from datetime import datetime
+import numpy as np
+from tqdm import tqdm
 
-KIFU_NUM = 100000
+PLAYOUT_NUM = 10
+KIFU_NUM = 10000
 BLACK =              np.array([[0, 0, 0, 0, 0, 0, 0, 0
                              , 0, 0, 0, 0, 0, 0, 0, 0
                              , 0, 0, 0, 0, 0, 0, 0, 0
@@ -91,8 +94,53 @@ class Playout:
     if l.shape[0] == 1:
       y, x = l[0]
     else:
-      y, x = l[int(np.random.randint(l.shape[0]-1, size=1))]
+      y, x = l[int(np.random.randint(l.shape[0], size=1))]
     return y, x
+
+  def playout(self, board, color):
+    tsugiban = copy.deepcopy(board)
+    while True:
+      if not Play().exist_legal_move(tsugiban, color):
+        color = 3 - color
+        if not Play().exist_legal_move(tsugiban, color):
+          c_1 = np.sum(tsugiban == 1)
+          c_2 = np.sum(tsugiban == 2)
+          if c_1 >= c_2:
+            return np.array([[1, 0]])
+          else:
+            return np.array([[0, 1]])
+      y, x = self.randmove(tsugiban, color)
+      Play().set_turn(tsugiban, color, y, x)
+      color = 3 - color
+
+  def playout_result(self, board, color, y, x):
+    num = PLAYOUT_NUM
+    tsugiban = copy.deepcopy(board)
+    player = color
+    result = np.empty((0, 2), int)
+    Play().set_turn(tsugiban, color, y, x)
+    color = 3 - color
+    for i in range(num):
+      result = np.append(result, self.playout(tsugiban, color), axis=0)
+    if player == 1:
+      return np.sum(result[:, 0] == 1) / float(num)
+    elif player == 2:
+      return np.sum(result[:, 1] == 1) / float(num)
+
+
+class Cpu:
+  def decide_move(self, board, color):
+    rate = []
+    l = Play().legal_list(board, color)
+    if l.shape[0] == 1:
+      y, x = l[0]
+    for i in range(l.shape[0]):
+      q, p =l[i]
+      rate.append(Playout().playout_result(board, color, q, p))
+      maxindex = [i for i, x in enumerate(rate) if x == max(rate)]
+    y, x = l[random.choice(maxindex)]
+    return  y, x
+
 
 
 class Othello:
@@ -128,7 +176,5 @@ class Othello:
 
 
 if __name__ == '__main__':
-  for count in range(1, KIFU_NUM + 1):
+  for count in tqdm(range(1, KIFU_NUM + 1)):
     Othello().cvc_kifu(count)
-    if count % 100 == 0:
-      print('count:{0}'.format(count))

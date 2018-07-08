@@ -1,6 +1,7 @@
 import argparse
 import os
 import random
+from tqdm import tqdm
 parser = argparse.ArgumentParser()
 parser.add_argument('dir', type=str)
 parser.add_argument('filename', type=str)
@@ -17,12 +18,12 @@ random.shuffle(kifu_list)
 #訓練データとテストデータに分けて保存
 train_len = int(len(kifu_list) * args.ratio)
 with open(args.filename + '_train.txt', 'w')as f:
-    for i in range(train_len):
+    for i in tqdm(range(train_len)):
         f.write(kifu_list[i])
         f.write('\n')
 
 with open(args.filename + '_test.txt', 'w')as f:
-    for i in range(train_len, len(kifu_list)):
+    for i in tqdm(range(train_len, len(kifu_list))):
         f.write(kifu_list[i])
         f.write('\n')
 print(f'total kifu num = {len(kifu_list)}')
