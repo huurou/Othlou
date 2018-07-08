@@ -79,7 +79,8 @@ class Play:  # 石,盤面の処理について
 
 
 class Model:  # モデル関係
-    
+    def predict_result(self, board, color, y, x):
+        model = load_model('othlo.h5')
 
 
 class Move:  # 打つ手を決める

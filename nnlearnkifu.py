@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import tensorflow as tf
 from keras.callbacks import EarlyStopping
-from keras.layers import Activation, Dense
+from keras.layers import Activation, Dense, Dropout
 from keras.models import Sequential, load_model
 from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
@@ -49,22 +49,29 @@ if __name__ == '__main__':
         model = Sequential()
         model.add(Dense(500, input_dim=128, activation='relu'))
         model.add(Dense(200,activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(200,activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(200,activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(200,activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(200,activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(200,activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(200,activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(200,activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(200,activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(200,activation='relu'))
-        model.add(Dense(200,activation='relu'))
-        model.add(Dense(200,activation='relu'))
-        model.add(Dense(200,activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(2, activation='softmax'))
     model.summary()
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10, verbose=0)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=3, verbose=0)
     history = model.fit(banlist_train, labelist_train,
                         epochs=100, batch_size=32,
                         validation_split=0.1, callbacks=[early_stopping])
