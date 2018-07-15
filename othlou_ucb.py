@@ -1,6 +1,5 @@
 import numpy as np
 import copy
-import math
 
 
 class Ban:
@@ -87,7 +86,7 @@ class Play:
 
 
 class Cpu:
-  def cpu_randmove(self, board, color):
+  def randmove(self, board, color):
     l = Play().legal_list(board, color)
     if l.shape[0] == 1:
       y, x = l[0]
@@ -106,40 +105,22 @@ class Cpu:
             return np.array([[1, 0]])
           else:
             return np.array([[0, 1]])
-      y, x = self.cpu_randmove(board, color)
-      Play().set_turn(board, color, y, x)
-      color = (3 - color)
-
-  def ucb_playout(self, node):
-    board = copy.deepcopy(node.board)
-    color = node.color
-    while True:
-      if not Play().exist_legal_move(board, color):
-        color = (3 - color)
-        if not Play().exist_legal_move(board, color):
-          c_1 = np.sum(board == 1)
-          c_2 = np.sum(board == 2)
-          if c_1 >= c_2:
-            return np.array([[1, 0]])
-          else:
-            return np.array([[0, 1]])
-      y, x = self.cpu_randmove(board, color)
+      y, x = self.randmove(board, color)
       Play().set_turn(board, color, y, x)
       color = (3 - color)
 
 
 class Node:
   def __init__(self, board, color):
-    self.board = copy.deepcopy(board)  # ノードの局面
-    self.color = color  # ノードの手番
-    self.child_num = 0  # 子ノードの数
-    self.child_move = None  # 子ノードの指し手のリスト
-    self.ucb = 0.00  # 子ノードとしてのucb値
-    self.child_ucb = []  # 子ノードのucb値
-    self.child_node = []  # 子ノード
-    self.total_play = 0  # 各子ノードの総プレイアウト数
-    self.each_play = 0  # 子ノードとしてのプレイアウト数
-    self.rate = 0.00  # 子ノードとしてのプレイアウト総勝率
+    self.board = copy.deepcopy(board)   # 基本要素：ノードの局面
+    self.color = color                  # 基本要素：ノードの手番
+    self.child = []                     # 親要素：子ノードのリスト
+    self.child_move = None             # 親要素：子ノードのリストに対応した指し手
+    self.child_num = 0                  # 親要素：子ノードの数
+    self.total_playout = 0              # 親要素：子ノードの全訪問回数合計 POするたびに記録？
+    self.black_win = 0                  # 子要素：PO黒勝ちor引き分けの数
+    self.white_win = 0                  # 子要素：PO白勝ちの数
+    self.ucb_value = 0                  # 子要素：子ノードのucb値
 
 
 class Entry_node:
@@ -156,11 +137,29 @@ class Entry_node:
       aite_color = 3 - self.node.color
       self.node.child_node.append(Node(tsugiban, aite_color))  # 子ノードに渡すのは盤面と手番の情報
 
+"""
 
+"""
 class Ucb:
-  def ucb(self, rate, each_play, total_play):  # rate:平均勝率, each_play:各プレイ回数 ucb値を返す
-    return rate + math.sqrt(math.log(total_play) / each_play)
+    def playout(self, node):
+        board = copy.deepcopy(node.board)
+        color = node.color
+        while True:
+            if not Play().exist_legal_move(board, color):
+                color = (3 - color)
+                if not Play().exist_legal_move(board, color):
+                    c_1 = np.sum(board == 1)
+                    c_2 = np.sum(board == 2)
+                    if c_1 >= c_2:
+                        return np.array([[1, 0]])
+                    else:
+                        return np.array([[0, 1]])
+            y, x = Cpu.randmove(board, color)
+            Play().set_turn(board, color, y, x)
+            color = (3 - color)
 
-  def traial(self, node):  # ucb試行
-    for child in range(node.child_node):
-      Cpu.ucb_playout(child)
+    def ucb_calc(self, node):  # 親ノードを渡したい ucb = rate + sqrt(log(totalPO)/ni) 規定回数POする
+        for child in node.child:  # 最初に全子ノードに対して1回ずつPOを行う
+            self.playout(child)
+            node.total_playout += 1
+        if node.color == 1:  # 現局面が黒番

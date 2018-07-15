@@ -13,5 +13,6 @@
     "python.unitTest.unittestEnabled": false,
     "python.pythonPath": "C:\\Users\\taihei-k\\Anaconda3\\python.exe",
     "python.unitTest.promptToConfigure": false,
-    "python.autoComplete.addBrackets": true
+    "python.autoComplete.addBrackets": true,
+    "python.linting.pep8Enabled": true
 }

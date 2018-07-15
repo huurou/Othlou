@@ -165,7 +165,7 @@ class Othello:
       w[reban == 2] = 1
       black = np.append(black, np.reshape(b, (1, 64)), axis=0)
       white = np.append(white, np.reshape(w, (1, 64)), axis=0)
-      kifu= np.c_[black, white]
+    kifu = np.c_[black, white]
     c_1 = np.sum(ban == 1)
     c_2 = np.sum(ban == 2)
     if c_1 >= c_2:
