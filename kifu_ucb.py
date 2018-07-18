@@ -1,11 +1,13 @@
 import copy
+import math
 import random
 from datetime import datetime
 
 import numpy as np
 from tqdm import tqdm
 
-KIFU_NUM = 10000
+KIFU_NUM = 1000
+SEARCH_NUM = 200
 
 class Ban:
     def init_ban(self):
@@ -79,34 +81,84 @@ class Move:
         else:
             y, x = l[int(np.random.randint(l.shape[0], size=1))]
         return y, x
+    
+    def playout(self, board, color, q, p):
+        tsugiban = copy.deepcopy(board)
+        Play().set_turn(tsugiban, color, q, p)
+        color = 3 - color
+        while True:
+            if not Play().exist_legal_move(tsugiban, color):
+                color = 3 - color
+                if not Play().exist_legal_move(tsugiban, color):
+                    c_1 = np.sum(tsugiban == 1)
+                    c_2 = np.sum(tsugiban == 2)
+                    if c_1 >= c_2:
+                        return 1
+                    else:
+                        return 0
+            y, x = self.randmove(tsugiban, color)
+            Play().set_turn(tsugiban, color, y, x)
+            color = 3 - color
+
+    
+    def mcmove(self, board, color):
+        l = Play().legal_list(board, color)
+        m = l.shape[0]
+        if m == 1:
+            y, x = l[0]
+        w = [0] * m
+        for j in range(m):
+            q, p = l[j]
+            w[j] += Move().playout(board, color, q, p)
+        v = [1] * m
+        u = [0] * m
+        for n in range(m):
+                    u[n] = w[n]/v[n] + math.sqrt(math.log(m)/v[n])
+        if color == 1:
+            for i in range(m + 1, SEARCH_NUM + 1):
+                s = u.index(max(u))
+                q, p = l[s]
+                w[s] += Move().playout(board, color, q, p)
+                v[s] += 1
+                for n in range(m):
+                    u[n] = w[n]/v[n] + math.sqrt(math.log(i)/v[n])
+            y, x = l[u.index(max(u))]
+        if color == 2:
+            for i in range(m + 1, SEARCH_NUM + 1):
+                s = u.index(max(u))
+                q, p = l[s]
+                w[s] += (1 - Move().playout(board, color, q, p))
+                v[s] += 1
+                for n in range(m):
+                    u[n] = w[n]/v[n] + math.sqrt(math.log(i)/v[n])
+            y, x = l[u.index(max(u))]
+        return y, x
 
 
 class Othello:
     def cvc_kifu(self, count):
         ban = Ban().init_ban()
         color = 1
-        kifulist = np.empty((0, 193))
+        kifulist = np.empty((0,130))
         while True:
             if not Play().exist_legal_move(ban, color):
-                color = 3 - color
+                color = 3- color
                 if not Play().exist_legal_move(ban, color):
                     break
-            y, x = Move().randmove(ban, color)
-            teban = np.full((1, 1),color -1)
-            m = (y - 1) * 8 + x - 1
-            move = np.eye(64)[m].reshape(1,64)
+            y, x = Move().mcmove(ban, color)
+            move = np.array([[(y - 1) * 8 + x - 1]])
+            teban = np.array([[color - 1]])
             reban = ban[1:9, 1:9]
             b = np.zeros((8, 8))
             w = np.zeros((8, 8))
             b[reban == 1] = 1
             w[reban == 2] = 1
-            b_ban = np.reshape(b, (1, 64))
-            w_ban = np.reshape(w, (1, 64))
-            kifu = np.concatenate([b_ban, w_ban, teban, move], axis=1)
+            black = np.reshape(b, (1, 64))
+            white = np.reshape(w, (1, 64))
+            kifu = np.concatenate([black, white, teban, move], axis=1)
             kifulist = np.append(kifulist, kifu, axis=0)
             Play().set_turn(ban, color, y, x)
-            color = 3 - color
-        kifulist = kifulist.astype('int')
+            color = 3- color
         np.save('./kifu/{0}-{1}'.format(datetime.now().strftime('%y_%m_%d_%H_%M_%S'), count), kifulist)
 
 
